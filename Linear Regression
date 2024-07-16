@@ -1,0 +1,221 @@
+Linear Regression :
+import numpy as np
+from sklearn.datasets import load_iris, load_wine
+
+iris = load_iris()
+wine = load_wine()
+
+# Use only one feature for simplicity
+iris_X = iris.data[:, np.newaxis, 2]
+wine_X = wine.data[:, np.newaxis, 0]
+
+# Split the data into training/testing sets
+iris_X_train = iris_X[:-20]
+iris_X_test = iris_X[-20:]
+
+wine_X_train = wine_X[:-20]
+wine_X_test = wine_X[-20:]
+
+# Split the targets into training/testing sets
+iris_y_train = iris.target[:-20]
+iris_y_test = iris.target[-20:]
+
+wine_y_train = wine.target[:-20]
+wine_y_test = wine.target[-20:]
+
+# Calculate the means of X and y
+iris_x_mean = np.mean(iris_X_train)
+iris_y_mean = np.mean(iris_y_train)
+
+wine_x_mean = np.mean(wine_X_train)
+wine_y_mean = np.mean(wine_y_train)
+
+# Calculate the terms needed for the numator and denominator of beta
+iris_xycov = (iris_X_train - iris_x_mean) * (iris_y_train - iris_y_mean)
+iris_xvar = (iris_X_train - iris_x_mean)**2
+
+wine_xycov = (wine_X_train - wine_x_mean) * (wine_y_train - wine_y_mean)
+wine_xvar = (wine_X_train - wine_x_mean)**2
+
+# Calculate beta
+iris_beta = np.sum(iris_xycov) / np.sum(iris_xvar)
+wine_beta = np.sum(wine_xycov) / np.sum(wine_xvar)
+
+# Calculate alpha
+iris_alpha = iris_y_mean - (iris_beta * iris_x_mean)
+wine_alpha = wine_y_mean - (wine_beta * wine_x_mean)
+
+# Make predictions
+iris_y_pred = iris_alpha + iris_beta * iris_X_test
+wine_y_pred = wine_alpha + wine_beta * wine_X_test
+
+# Calculate and print the Mean Absolute Error of the predictions
+iris_mae = np.mean(np.abs(iris_y_test - iris_y_pred))
+print('Iris Mean Absolute Error:', iris_mae)
+
+wine_mae = np.mean(np.abs(wine_y_test - wine_y_pred))
+print('Wine Mean Absolute Error:', wine_mae)
+
+# Calculate and print the Mean Squared Error of the predictions
+iris_mse = np.mean((iris_y_test - iris_y_pred)**2)
+print('Iris Mean Squared Error:', iris_mse)
+
+wine_mse = np.mean((wine_y_test - wine_y_pred)**2)
+print('Wine Mean Squared Error:', wine_mse)
+
+# Calculate and print the Root Mean Squared Error of the predictions
+iris_rmse = np.sqrt(np.mean((iris_y_test - iris_y_pred)**2))
+print('Iris Root Mean Squared Error:', iris_rmse)
+
+wine_rmse = np.sqrt(np.mean((wine_y_test - wine_y_pred)**2))
+print('Wine Root Mean Squared Error:', wine_rmse)
+
+
+
+LDA:
+import pandas as pd # For data manipulation and analysis
+import numpy as np # For numerical operations
+
+# For data visualization
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA # For implementing LDA algorithm
+from sklearn.model_selection import train_test_split # For splitting the dataset into training and testing sets
+from sklearn.metrics import confusion_matrix, classification_report # For evaluating the model performance
+from sklearn.preprocessing import StandardScaler # For feature scaling
+from sklearn.datasets import load_iris # To load the iris dataset
+# Load the Iris dataset
+iris = load_iris()
+
+# Convert the dataset into pandas dataframe
+iris_df = pd.DataFrame(data= np.c_[iris['data'], iris['target']],
+                     columns= iris['feature_names'] + ['target'])
+
+# Display the first 5 rows of the dataframe
+iris_df.head()
+
+# Display the summary statistics of the dataframe
+iris_df.describe()
+
+# Check for any missing values in the dataframe
+iris_df.isnull().sum()
+
+# Display the distribution of the target variable
+iris_df['target'].value_counts()
+
+# Visualize the pairplot of the dataframe
+sns.pairplot(iris_df, hue='target')
+# Define the features and the target variable
+X = iris_df.iloc[:, :-1].values
+y = iris_df.iloc[:, -1].values
+
+# Split the dataset into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1)
+
+# Scale the features
+sc = StandardScaler()
+X_train = sc.fit_transform(X_train)
+X_test = sc.transform(X_test)
+# Create an instance of LDA
+lda = LDA(n_components=2)
+
+# Fit the model on the training set
+lda.fit(X_train, y_train)
+
+# Predict the classes on the testing set
+y_pred = lda.predict(X_test)
+
+# Print the confusion matrix
+print(confusion_matrix(y_test, y_pred))
+
+# Print the classification report
+print(classification_report(y_test, y_pred))
+# Create a dataframe for the test set
+test_df = pd.DataFrame(X_test, columns=iris['feature_names'])
+
+# Add the true and predicted classes to the dataframe
+test_df['True Class'] = y_test
+test_df['Predicted Class'] = y_pred
+
+# Plot the confusion matrix
+conf_mat = confusion_matrix(y_test, y_pred)
+sns.heatmap(conf_mat, annot=True, fmt='d', cmap='Blues')
+plt.title('Confusion Matrix')
+plt.xlabel('Predicted Class')
+plt.ylabel('True Class')
+plt.show()
+
+# Plot the classification report
+report = classification_report(y_test, y_pred, output_dict=True)
+report_df = pd.DataFrame(report).transpose()
+report_df.drop(['macro avg', 'weighted avg'], inplace=True)
+report_df[['precision', 'recall', 'f1-score']].plot(kind='bar', edgecolor='black')
+plt.title('Classification Report')
+plt.xlabel('Class')
+plt.ylabel('Score')
+plt.show()
+plt.figure(figsize=(10, 5))
+sns.kdeplot(data=test_df, x='True Class', label='True Class', fill=True)
+sns.kdeplot(data=test_df, x='Predicted Class', label='Predicted Class', fill=True)
+plt.title('Distributions of the True and Predicted Classes')
+plt.xlabel('Class')
+plt.ylabel('Density')
+plt.legend()
+plt.show()
+
+multi class:
+
+# Determine the number of features and classes
+n_features = X_train.shape[1]
+n_classes = len(np.unique(y_train))
+
+# Compute the maximum number of components
+max_components = min(n_features, n_classes - 1)
+
+# Create an instance of LDA with the correct number of components
+lda_multi = LDA(n_components=max_components)
+
+# Fit the model on the training set
+lda_multi.fit(X_train, y_train)
+
+# Predict the classes on the testing set
+y_pred_multi = lda_multi.predict(X_test)
+
+# Print the confusion matrix
+print(confusion_matrix(y_test, y_pred_multi))
+
+# Print the classification report
+print(classification_report(y_test, y_pred_multi))
+# Create a dataframe for the test set
+test_df_multi = pd.DataFrame(X_test, columns=iris['feature_names'])
+
+# Add the true and predicted classes to the dataframe
+test_df_multi['True Class'] = y_test
+test_df_multi['Predicted Class'] = y_pred_multi
+# Plot the confusion matrix
+conf_mat_multi = confusion_matrix(y_test, y_pred_multi)
+sns.heatmap(conf_mat_multi, annot=True, fmt='d', cmap='Blues')
+plt.title('Confusion Matrix for Multi Class Classification')
+plt.xlabel('Predicted Class')
+plt.ylabel('True Class')
+plt.show()
+
+# Plot the classification report
+report_multi = classification_report(y_test, y_pred_multi, output_dict=True)
+report_df_multi = pd.DataFrame(report_multi).transpose()
+report_df_multi.drop(['macro avg', 'weighted avg'], inplace=True)
+report_df_multi[['precision', 'recall', 'f1-score']].plot(kind='bar', edgecolor='black')
+plt.title('Classification Report for Multi Class Classification')
+plt.xlabel('Class')
+plt.ylabel('Score')
+plt.show()
+# Plot the distributions of the true and predicted classes
+plt.figure(figsize=(10, 5))
+sns.kdeplot(data=test_df_multi, x='True Class', label='True Class', fill=True)
+sns.kdeplot(data=test_df_multi, x='Predicted Class', label='Predicted Class', fill=True)
+plt.title('Distributions of the True and Predicted Classes for Multi Class Classification')
+plt.xlabel('Class')
+plt.ylabel('Density')
+plt.legend()
+plt.show()
